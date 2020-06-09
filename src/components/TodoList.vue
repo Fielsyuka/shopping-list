@@ -3,7 +3,7 @@
 		<div class="c-list">
 			<div class="c-list_item" v-for="(task, index) in tasks" :key='index'>
 				<label>
-				<input type="checkbox" name="complete" class="c-checkbox" v-model="task.isDone">
+				<input type="checkbox" name="complete" class="c-checkbox" @click="updateDone(index)" :checked="task.isDone">
 				<span class="c-checkbox_value">{{ task.text }}</span>
 				</label>
 				<span class="c-delete" @click="clickDelete(index)">[delete]</span>
@@ -18,7 +18,10 @@ export default {
 	props: ['tasks'],
 	methods: {
 		clickDelete(index) {
-			this.$emit('click-delete', index)
+			this.$emit('click-delete', index);
+		},
+		updateDone(index) {
+			this.$emit('update-check', index);
 		}
 	}
 }

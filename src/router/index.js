@@ -4,6 +4,7 @@ import VueRouter from 'vue-router'
 import Index from '../views/Index.vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
+
 // Install BootstrapVue
 Vue.use(BootstrapVue)
 // Optionally install the BootstrapVue icon components plugin
@@ -11,7 +12,7 @@ Vue.use(IconsPlugin)
 
 Vue.use(VueRouter)
 
-  const routes = [
+const routes = [
   {
     path: '/',
     name: 'Index',
