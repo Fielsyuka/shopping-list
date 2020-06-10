@@ -7,9 +7,9 @@
       <p v-else>You got everything you need :)</p>
     </header>
     
-    <sign-in v-if="modal" @close-modal="closeModal" @auth-user="authUser" />
+    <modal v-if="modal" :user="user" @close-modal="closeModal" @auth-user="authUser" @log-out="logOut" />
     <todo-form @update-value="addTask" />
-    <todo-list :tasks="tasks" @click-delete="deleteTask" @update-check="updateCheck" />
+    <todo-list :tasks="tasks" :local="local" :user="user" @click-delete="deleteTask" @update-check="updateCheck" />
 
     <div class="l-footer">
       <p class="c-purge" @click="purge">Delete done</p>
@@ -21,7 +21,7 @@
 
 import TodoForm from '@/components/TodoForm'
 import TodoList from '@/components/TodoList'
-import SignIn from '@/components/SignIn'
+import Modal from '@/components/Modal'
 import firebase from 'firebase/app'
 import 'firebase/app'
 import 'firebase/auth'
@@ -32,85 +32,106 @@ export default {
   components: {
     TodoForm,
     TodoList,
-    SignIn
+    Modal
   },
   data() {
     return {
-      database: firebase.firestore(),
       collection: firebase.firestore().collection('tasks'),
       tasks: [],
+      local: [],
       isLogin: false,
       modal: false,
-      user: '',
+      user: {},
     }
   },
   created: function() {
 
   },
   mounted: function() {
-    // this.user = firebase.auth().currentUser.uid;
-    // this.tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-    // this.collection.get().then( snapshot => {
-    //   snapshot.forEach(doc => {
-    //     this.tasks.unshift(doc.data());
-    //   })
-    // });
-    this.collection.onSnapshot( snapshot => {
-      snapshot.docChanges().forEach(change => {
-        if (change.type === "added") {
-          this.tasks.unshift(change.doc.data());
-        }
-        if(change.type === "removed") {
-          let targetId = change.doc.id;
-          this.tasks = this.tasks.filter(task => {
-            return task.id !== targetId;
-          });
-        }
-        if(change.type === "modified") {
-          let targetId = change.doc.id;
-          let targetTask = this.findTaskById(targetId)[0];
-          let newValue = change.doc.data().isDone;
-          if(targetTask !== newValue) {
-            targetTask.isDone = newValue;
-          }
-        }
-      });
+    let _this = this;
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+      _this.isLogin = true;
+      _this.getDatabase();
+      console.log("loggedin");
+      } else {
+      _this.isLogin = false;
+      _this.modal = true;
+      _this.getLocalData();
+      }
     });
   },
   watch: {
-    // tasks: {
-    //   handler: function(newValue, oldValue) {
-
-    //     // localStorage.setItem('tasks', JSON.stringify(this.tasks));
-    //   },
-    //   deep: true,
-    // }
+    local: {
+      handler: function() {
+        localStorage.setItem('tasks', JSON.stringify(this.local));
+      },
+      deep: true,
+    }
   },
   computed: {
     remainingTask() {
-      return this.tasks.filter( task => {
+      let filterTargt = this.user ? this.tasks : this.local;
+      return filterTargt.filter( task => {
         return !task.isDone
       });
     }
   },
   methods: {
+    getDatabase() {
+      this.collection.onSnapshot( snapshot => {
+        snapshot.docChanges().forEach(change => {
+          if (change.type === "added") {
+            this.tasks.unshift(change.doc.data());
+          }
+          if(change.type === "removed") {
+            let targetId = change.doc.id;
+            this.tasks = this.tasks.filter(task => {
+              return task.id !== targetId;
+            });
+          }
+          if(change.type === "modified") {
+            let targetId = change.doc.id;
+            let targetTask = this.findTaskById(targetId)[0];
+            let newValue = change.doc.data().isDone;
+            if(targetTask !== newValue) {
+              targetTask.isDone = newValue;
+            }
+          }
+        });
+      });
+    },
+    getLocalData() {
+      this.local = JSON.parse(localStorage.getItem('tasks')) || [];
+    },
     addTask(value) {
-      if(value) {
-        let taskRef = this.collection.doc();
-        let newTask = {
-          id: taskRef.id,
-          text: value,
-          isDone: false
-        };
-        taskRef.set(newTask)
-          .catch( err => {
+      if(value) {        
+        if(Object.keys(this.user).length) {
+          let taskRef = this.collection.doc();
+          let newTask = {
+            id: taskRef.id,
+            text: value,
+            isDone: false
+          };
+          taskRef.set(newTask).catch( err => {
             console.log(err);
           });
+        } else {
+          let newTask = {
+            text: value,
+            isDone: false
+          }
+          this.local.unshift(newTask);
+        }
       }
     },
     deleteTask(index) {
-      let targetId = this.tasks[index].id;
-      this.collection.doc(targetId).delete();
+      if(Object.keys(this.user).length) {
+        let targetId = this.tasks[index].id;
+        this.collection.doc(targetId).delete();
+      } else {
+        this.local.splice(index, 1);
+      }
     },
     updateCheck(index) {
       let targetId = this.tasks[index].id;
@@ -130,9 +151,20 @@ export default {
     openModal() {
       this.modal = true;
     },
-    authUser() {
+    authUser(user) {
       this.isLogin = true;
       this.closeModal();
+      this.user = user;
+    },
+    logOut() {
+      firebase.auth().signOut().then(()=>{
+        console.log("ログアウトしました");
+      })
+      .catch( (error)=>{
+        console.log(`ログアウト時にエラーが発生しました (${error})`);
+      });
+      this.tasks = [];
+      this.user = {};
     },
     findTaskById(id) {
       return this.tasks.filter( task => {
@@ -182,6 +214,7 @@ export default {
   margin-bottom: 0;
 }
 .c-icon-user {
+  cursor: pointer;
   position: absolute;
   top: 20px;
   left: 20px;
