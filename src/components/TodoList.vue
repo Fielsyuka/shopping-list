@@ -1,6 +1,6 @@
 <template>
 	<div class="l-list-container">
-		<div class="c-list" v-if="tasks.length">
+		<div class="c-list" v-if="isLogin">
 			<div class="c-list_item" v-for="(task, index) in tasks" :key='index'>
 				<label>
 				<input type="checkbox" name="complete" class="c-checkbox" @change="updateDone(index)" :checked="task.isDone">
@@ -27,7 +27,7 @@ export default {
 	props: {
 		tasks: Array,
 		local: Array,
-		user: Object
+		isLogin: Boolean
 	},
 	methods: {
 		clickDelete(index) {

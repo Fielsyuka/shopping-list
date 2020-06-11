@@ -2,11 +2,38 @@
   <div class="c-modal">
     <div class="c-modal_overlay" @click="closeModal"></div>
     <div class="c-modal_content">
-      <div v-if="Object.keys(user).length">
-        <b-button type="button" variant="primary" @click="logOut">ログアウト</b-button>
+      <div v-if="isLogin">
+        <h4 class="mb-4">My Account</h4>
+        <div class="account_name">
+          <p>{{ user.displayName }}</p>
+          <b-button v-b-toggle.collapse-name size="sm" variant="outline-dark" id="btn-edit" >Edit</b-button>          
+        </div>
+        <b-collapse id="collapse-name">
+          <b-card>
+            <b-form @submit.prevent="updateProfile">
+              <b-input-group>
+                <b-form-input
+                  id="name"
+                  class="c-textinput"
+                  v-model="form.name"
+                  type="text"
+                  required
+                  placeholder="Enter new user name"
+                  autocomplete="new-password"
+                >
+                </b-form-input>
+                <b-input-group-append>
+                  <b-button type="submit" variant="outline-success" size="sm">OK</b-button>
+                </b-input-group-append>
+              </b-input-group>
+            </b-form> 
+          </b-card>
+        </b-collapse>
+
+        <p class="signout" @click="signOut">Signout</p>
       </div>
       <div v-else>
-        <h2 class="mb-4">ログイン</h2>
+        <h4 class="mb-4">ログイン</h4>
         <b-form @submit.prevent="signIn" @reset.prevent="onReset">
           <b-form-group
             id="input-email"
@@ -45,7 +72,6 @@
           <b-button type="reset" variant="secondary">Reset</b-button>
         </b-form>        
       </div>
-
     </div>
   </div>
 </template>
@@ -57,6 +83,7 @@ import 'firebase/auth';
 export default {
   name: 'Modal',
   props: {
+    isLogin: Boolean,
     user: Object
   },
   data () {
@@ -64,6 +91,7 @@ export default {
       form: {
         email: '',
         password: '',
+        name: '',
       }
     }
   },
@@ -71,18 +99,16 @@ export default {
     closeModal() {
       this.$emit('close-modal');
     },
-    authUser(user) {
-      this.$emit('auth-user', user);
+    authUser() {
+      this.$emit('auth-user');
     },
     signIn() {
-      firebase
-        .auth()
+      firebase.auth()
         .signInWithEmailAndPassword(this.form.email, this.form.password)
-        .then( (user) => {
-          this.authUser(user);
+        .then( () => {
+          this.authUser();
         })
         .catch(error => {
-          // ログインに失敗した場合
           alert(error.message);
         });
     },
@@ -90,8 +116,14 @@ export default {
       this.form.email = ''
       this.form.password = ''
     },
-    logOut() {
-      this.$emit('log-out');
+    signOut() {
+      this.$emit('sign-out');
+    },
+    updateProfile() {
+      document.getElementById("btn-edit").click();
+      let newName = this.form.name;
+      this.$emit('update-profile', newName);
+      this.form.name = "";
     }
   }
 }
@@ -129,7 +161,27 @@ export default {
   z-index: 9000;
 }
 .c-textinput {
-  background-color: #fff8f2;
+  background-color: #fff7f3;
+}
+.account_name {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.account_name > p {
+  margin-bottom: 0;
+  font-size: 18px;
+}
+.signout {
+  cursor: pointer;
+  margin-top:20px;
+  margin-bottom: 0;
+  text-decoration: underline;
+}
+.signout:hover {
+  opacity: .8;
+  text-decoration: none;
 }
 
 </style>

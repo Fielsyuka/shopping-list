@@ -7,9 +7,9 @@
       <p v-else>You got everything you need :)</p>
     </header>
     
-    <modal v-if="modal" :user="user" @close-modal="closeModal" @auth-user="authUser" @log-out="logOut" />
+    <modal v-if="modal" :is-login="isLogin" :user="user" @close-modal="closeModal" @auth-user="authUser" @sign-out="signOut" @update-profile="updateProfile" />
     <todo-form @update-value="addTask" />
-    <todo-list :tasks="tasks" :local="local" :user="user" @click-delete="deleteTask" @update-check="updateCheck" />
+    <todo-list :tasks="tasks" :local="local" :is-login="isLogin" @click-delete="deleteTask" @update-check="updateCheck" />
 
     <div class="l-footer">
       <p class="c-purge" @click="purge">Delete done</p>
@@ -51,13 +51,14 @@ export default {
     let _this = this;
     firebase.auth().onAuthStateChanged(function(user) {
       if (user) {
-      _this.isLogin = true;
-      _this.getDatabase();
-      console.log("loggedin");
+        let userData = firebase.auth().currentUser.providerData[0];
+        _this.isLogin = true;
+        _this.getDatabase();
+        _this.user = userData;
       } else {
-      _this.isLogin = false;
-      _this.modal = true;
-      _this.getLocalData();
+        _this.isLogin = false;
+        _this.modal = true;
+        _this.getLocalData();
       }
     });
   },
@@ -71,7 +72,7 @@ export default {
   },
   computed: {
     remainingTask() {
-      let filterTargt = this.user ? this.tasks : this.local;
+      let filterTargt = (this.isLogin === true) ? this.tasks : this.local;
       return filterTargt.filter( task => {
         return !task.isDone
       });
@@ -106,7 +107,7 @@ export default {
     },
     addTask(value) {
       if(value) {        
-        if(Object.keys(this.user).length) {
+        if(this.isLogin) {
           let taskRef = this.collection.doc();
           let newTask = {
             id: taskRef.id,
@@ -126,7 +127,7 @@ export default {
       }
     },
     deleteTask(index) {
-      if(Object.keys(this.user).length) {
+      if(this.isLogin) {
         let targetId = this.tasks[index].id;
         this.collection.doc(targetId).delete();
       } else {
@@ -151,20 +152,33 @@ export default {
     openModal() {
       this.modal = true;
     },
-    authUser(user) {
+    authUser() {
       this.isLogin = true;
       this.closeModal();
-      this.user = user;
+      // this.user = user;
     },
-    logOut() {
+    signOut() {
       firebase.auth().signOut().then(()=>{
-        console.log("ログアウトしました");
+        alert("ログアウトしました");
       })
       .catch( (error)=>{
         console.log(`ログアウト時にエラーが発生しました (${error})`);
       });
       this.tasks = [];
       this.user = {};
+      this.modal = false;
+    },
+    updateProfile(newName) {
+      let _this = this;
+      firebase.auth().currentUser.updateProfile({
+        displayName: newName,
+        photoURL: ""
+      }).then(function() {
+        let user = firebase.auth().currentUser.providerData[0];
+        _this.user = user;
+      }).catch(function(error) {
+        console.log(error);
+      });
     },
     findTaskById(id) {
       return this.tasks.filter( task => {
