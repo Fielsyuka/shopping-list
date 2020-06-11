@@ -168,17 +168,8 @@ export default {
       this.user = {};
       this.modal = false;
     },
-    updateProfile(newName) {
-      let _this = this;
-      firebase.auth().currentUser.updateProfile({
-        displayName: newName,
-        photoURL: ""
-      }).then(function() {
-        let user = firebase.auth().currentUser.providerData[0];
-        _this.user = user;
-      }).catch(function(error) {
-        console.log(error);
-      });
+    updateProfile(user) {
+      this.user = user;
     },
     findTaskById(id) {
       return this.tasks.filter( task => {

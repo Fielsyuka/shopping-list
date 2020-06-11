@@ -5,7 +5,7 @@
       <div v-if="isLogin">
         <h4 class="mb-4">My Account</h4>
         <div class="account_name">
-          <p>{{ user.displayName }}</p>
+          <p><span>Name: </span> {{ username }}</p>
           <b-button v-b-toggle.collapse-name size="sm" variant="outline-dark" id="btn-edit" >Edit</b-button>          
         </div>
         <b-collapse id="collapse-name">
@@ -30,7 +30,7 @@
           </b-card>
         </b-collapse>
 
-        <p class="signout" @click="signOut">Signout</p>
+        <p class="signout mt-5" @click="signOut">Signout</p>
       </div>
       <div v-else>
         <h4 class="mb-4">ログイン</h4>
@@ -88,6 +88,7 @@ export default {
   },
   data () {
     return {
+      username: this.user.displayName,
       form: {
         email: '',
         password: '',
@@ -121,9 +122,20 @@ export default {
     },
     updateProfile() {
       document.getElementById("btn-edit").click();
+      let _this = this;
       let newName = this.form.name;
-      this.$emit('update-profile', newName);
-      this.form.name = "";
+
+      firebase.auth().currentUser.updateProfile({
+        displayName: newName,
+        // photoURL: ""
+      }).then(function() {
+        let user = firebase.auth().currentUser.providerData[0];
+        _this.$emit('update-profile', user);
+        _this.username = newName;
+        _this.form.name = "";
+      }).catch(function(error) {
+        console.log(error);
+      });      
     }
   }
 }
@@ -175,7 +187,6 @@ export default {
 }
 .signout {
   cursor: pointer;
-  margin-top:20px;
   margin-bottom: 0;
   text-decoration: underline;
 }
