@@ -3,14 +3,19 @@
     <div class="c-modal_overlay" @click="closeModal"></div>
     <div class="c-modal_content">
       <div v-if="isLogin">
-        <h4 class="mb-4">My Account</h4>
-        <div class="account_name">
-          <p><span>Name: </span> {{ username }}</p>
-          <b-button v-b-toggle.collapse-name size="sm" variant="outline-dark" id="btn-edit" >Edit</b-button>          
+        <h4 class="mb-5">My Account</h4>
+        <div class="account_img">
+          <!-- <input type="file" class="c-fileinput" name="photo" @change="updatePhoto"  accept="image/*" /> -->
+          <!-- <img :src="user.photoURL" alt=""> -->
+          <div class="circle"></div>
         </div>
-        <b-collapse id="collapse-name">
+        <div class="account_name">
+          <p>{{ username }}</p>
+          <span v-b-toggle.collapse-edit size="sm" variant="outline-dark" id="btn-edit" class="account_name_edit">[Edit]</span>
+        </div>
+        <b-collapse id="collapse-edit" class="mt-2">
           <b-card>
-            <b-form @submit.prevent="updateProfile">
+            <b-form @submit.prevent="updateName">
               <b-input-group>
                 <b-form-input
                   id="name"
@@ -18,19 +23,18 @@
                   v-model="form.name"
                   type="text"
                   required
-                  placeholder="Enter new user name"
+                  placeholder="Enter user name"
                   autocomplete="new-password"
                 >
                 </b-form-input>
                 <b-input-group-append>
-                  <b-button type="submit" variant="outline-success" size="sm">OK</b-button>
+                  <b-button type="submit" variant="outline-dark" size="sm">OK</b-button>
                 </b-input-group-append>
               </b-input-group>
-            </b-form> 
+            </b-form>
           </b-card>
         </b-collapse>
-
-        <p class="signout mt-5" @click="signOut">Signout</p>
+        <b-button size="sm" variant="outline-dark" @click="signOut" class="mt-5">Signout</b-button>
       </div>
       <div v-else>
         <h4 class="mb-4">ログイン</h4>
@@ -93,6 +97,7 @@ export default {
         email: '',
         password: '',
         name: '',
+        image: ''
       }
     }
   },
@@ -120,23 +125,41 @@ export default {
     signOut() {
       this.$emit('sign-out');
     },
-    updateProfile() {
+    updateName() {
       document.getElementById("btn-edit").click();
       let _this = this;
       let newName = this.form.name;
 
       firebase.auth().currentUser.updateProfile({
-        displayName: newName,
-        // photoURL: ""
+        displayName: newName
       }).then(function() {
         let user = firebase.auth().currentUser.providerData[0];
-        _this.$emit('update-profile', user);
+        _this.$emit('update-name', user);
         _this.username = newName;
         _this.form.name = "";
       }).catch(function(error) {
         console.log(error);
       });      
-    }
+    },
+    // updatePhoto(e) {
+    //   const reader = new FileReader();
+    //   reader.onload = e => {
+    //     this.form.image = e.target.result;
+    //   };
+    //   reader.readAsDataURL(e.target.files[0]);
+
+    //   let _this = this;
+    //   let newPhoto = this.form.image;
+
+    //   firebase.auth().currentUser.updateProfile({
+    //     photoURL: newPhoto
+    //   }).then(function() {
+    //     let user = firebase.auth().currentUser.providerData[0];
+    //     _this.$emit('update-photo', user);
+    //   }).catch(function(error) {
+    //     console.log(error);
+    //   });      
+    // },
   }
 }
 </script>
@@ -175,15 +198,53 @@ export default {
 .c-textinput {
   background-color: #fff7f3;
 }
+.account_img {
+  position: relative;
+  }
+.account_img > img {
+  width: 20px;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+.circle {
+  width: 50px;
+  height: 50px;
+  margin-right: auto;
+  margin-left: auto;
+  border-radius: 50%;
+  background-color: pink;
+}
+/*.c-fileinput {
+  opacity: 0;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+}*/
 .account_name {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  margin-bottom: 14px;
+  margin-top: 14px;
+  text-align: center;
 }
 .account_name > p {
   margin-bottom: 0;
   font-size: 18px;
+}
+.account_name_edit {
+  margin-left: 4px;
+  font-size: 12px;
+}
+.account_name_edit:hover {
+  text-decoration: underline;
+}
+.buttons {
+  margin-top: 14px;
 }
 .signout {
   cursor: pointer;

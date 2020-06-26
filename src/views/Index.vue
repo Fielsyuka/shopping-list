@@ -7,7 +7,7 @@
       <p v-else>You got everything you need :)</p>
     </header>
     
-    <modal v-if="modal" :is-login="isLogin" :user="user" @close-modal="closeModal" @auth-user="authUser" @sign-out="signOut" @update-profile="updateProfile" />
+    <modal v-if="modal" :is-login="isLogin" :user="user" @close-modal="closeModal" @auth-user="authUser" @sign-out="signOut" @update-name="updateName" />
     <todo-form @update-value="addTask" />
     <todo-list :tasks="tasks" :local="local" :is-login="isLogin" @click-delete="deleteTask" @update-check="updateCheck" />
 
@@ -155,7 +155,6 @@ export default {
     authUser() {
       this.isLogin = true;
       this.closeModal();
-      // this.user = user;
     },
     signOut() {
       firebase.auth().signOut().then(()=>{
@@ -168,7 +167,7 @@ export default {
       this.user = {};
       this.modal = false;
     },
-    updateProfile(user) {
+    updateName(user) {
       this.user = user;
     },
     findTaskById(id) {
